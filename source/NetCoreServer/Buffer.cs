@@ -142,6 +142,14 @@ namespace NetCoreServer
             return buffer.Length;
         }
 
+        public long Append(ReadOnlySpan<byte> buffer)
+        {
+            Reserve(_size + buffer.Length);
+            buffer.CopyTo(_data.AsSpan().Slice((int)_size));
+            _size += buffer.Length;
+            return buffer.Length;
+        }
+
         /// <summary>
         /// Append the given buffer fragment
         /// </summary>
