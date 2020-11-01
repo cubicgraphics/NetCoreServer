@@ -79,6 +79,14 @@ namespace NetCoreServer
         public long DatagramsReceived { get; private set; }
 
         /// <summary>
+        /// Option: dual mode socket
+        /// </summary>
+        /// <remarks>
+        /// Specifies whether the Socket is a dual-mode socket used for both IPv4 and IPv6.
+        /// Will work only if socket is bound on IPv6 address.
+        /// </remarks>
+        public bool OptionDualMode { get; set; }
+        /// <summary>
         /// Option: reuse address
         /// </summary>
         /// <remarks>
@@ -95,49 +103,11 @@ namespace NetCoreServer
         /// <summary>
         /// Option: receive buffer size
         /// </summary>
-        public int OptionReceiveBufferSize
-        {
-            get => Socket.ReceiveBufferSize;
-            set => Socket.ReceiveBufferSize = value;
-        }
+        public int OptionReceiveBufferSize { get; set; } = 8192;
         /// <summary>
         /// Option: send buffer size
         /// </summary>
-        public int OptionSendBufferSize
-        {
-            get => Socket.SendBufferSize;
-            set => Socket.SendBufferSize = value;
-        }
-        /// <summary>
-        /// Option: receive timeout in milliseconds
-        /// </summary>
-        /// <remarks>
-        /// The default value is 0, which indicates an infinite time-out period. Specifying -1 also indicates an infinite time-out period.
-        /// </remarks>
-        public int OptionReceiveTimeout
-        {
-            get => Socket.ReceiveTimeout;
-            set => Socket.ReceiveTimeout = value;
-        }
-        /// <summary>
-        /// Option: send timeout in milliseconds
-        /// </summary>
-        /// <remarks>
-        /// The default value is 0, which indicates an infinite time-out period. Specifying -1 also indicates an infinite time-out period.
-        /// </remarks>
-        public int OptionSendTimeout
-        {
-            get => Socket.SendTimeout;
-            set => Socket.SendTimeout = value;
-        }
-        /// <summary>
-        /// Option: linger state
-        /// </summary>
-        public LingerOption OptionLingerState
-        {
-            get => Socket.LingerState;
-            set => Socket.LingerState = value;
-        }
+        public int OptionSendBufferSize { get; set; } = 8192;
 
         #region Connect/Disconnect client
 
@@ -145,6 +115,18 @@ namespace NetCoreServer
         /// Is the server started?
         /// </summary>
         public bool IsStarted { get; private set; }
+
+        /// <summary>
+        /// Create a new socket object
+        /// </summary>
+        /// <remarks>
+        /// Method may be override if you need to prepare some specific socket object in your implementation.
+        /// </remarks>
+        /// <returns>Socket object</returns>
+        protected virtual Socket CreateSocket()
+        {
+            return new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+        }
 
         /// <summary>
         /// Start the server (synchronous)
@@ -167,7 +149,7 @@ namespace NetCoreServer
             _sendEventArg.Completed += OnAsyncCompleted;
 
             // Create a new server socket
-            Socket = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            Socket = CreateSocket();
 
             // Update the server socket disposed flag
             IsSocketDisposed = false;
@@ -176,6 +158,9 @@ namespace NetCoreServer
             Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, OptionReuseAddress);
             // Apply the option: exclusive address use
             Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, OptionExclusiveAddressUse);
+            // Apply the option: dual mode (this option must be applied before recieving)
+            if (Socket.AddressFamily == AddressFamily.InterNetworkV6)
+                Socket.DualMode = OptionDualMode;
 
             // Bind the server socket to the IP endpoint
             Socket.Bind(Endpoint);
@@ -253,6 +238,10 @@ namespace NetCoreServer
 
                 // Dispose the server socket
                 Socket.Dispose();
+
+                // Dispose event arguments
+                _receiveEventArg.Dispose();
+                _sendEventArg.Dispose();
 
                 // Update the server socket disposed flag
                 IsSocketDisposed = false;
@@ -506,15 +495,13 @@ namespace NetCoreServer
             {
                 // Receive datagram from the client
                 int received = Socket.ReceiveFrom(buffer, (int)offset, (int)size, SocketFlags.None, ref endpoint);
-                if (received > 0)
-                {
-                    // Update statistic
-                    DatagramsReceived++;
-                    BytesReceived += received;
 
-                    // Call the datagram received handler
-                    OnReceived(endpoint, buffer, offset, size);
-                }
+                // Update statistic
+                DatagramsReceived++;
+                BytesReceived += received;
+
+                // Call the datagram received handler
+                OnReceived(endpoint, buffer, offset, size);
 
                 return received;
             }
@@ -652,22 +639,19 @@ namespace NetCoreServer
                 return;
             }
 
+            // Received some data from the client
             long size = e.BytesTransferred;
 
-            // Received some data from the client
-            if (size > 0)
-            {
-                // Update statistic
-                DatagramsReceived++;
-                BytesReceived += size;
+            // Update statistic
+            DatagramsReceived++;
+            BytesReceived += size;
 
-                // Call the datagram received handler
-                OnReceived(e.RemoteEndPoint, _receiveBuffer.Data, 0, size);
+            // Call the datagram received handler
+            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data, 0, size);
 
-                // If the receive buffer is full increase its size
-                if (_receiveBuffer.Capacity == size)
-                    _receiveBuffer.Reserve(2 * size);
-            }
+            // If the receive buffer is full increase its size
+            if (_receiveBuffer.Capacity == size)
+                _receiveBuffer.Reserve(2 * size);
         }
 
         /// <summary>

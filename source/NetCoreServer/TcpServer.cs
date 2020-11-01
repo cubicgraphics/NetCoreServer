@@ -71,6 +71,14 @@ namespace NetCoreServer
         /// </remarks>
         public int OptionAcceptorBacklog { get; set; } = 1024;
         /// <summary>
+        /// Option: dual mode socket
+        /// </summary>
+        /// <remarks>
+        /// Specifies whether the Socket is a dual-mode socket used for both IPv4 and IPv6.
+        /// Will work only if socket is bound on IPv6 address.
+        /// </remarks>
+        public bool OptionDualMode { get; set; }
+        /// <summary>
         /// Option: keep alive
         /// </summary>
         /// <remarks>
@@ -98,6 +106,14 @@ namespace NetCoreServer
         /// This option will enable/disable SO_EXCLUSIVEADDRUSE if the OS support this feature
         /// </remarks>
         public bool OptionExclusiveAddressUse { get; set; }
+        /// <summary>
+        /// Option: receive buffer size
+        /// </summary>
+        public int OptionReceiveBufferSize { get; set; } = 8192;
+        /// <summary>
+        /// Option: send buffer size
+        /// </summary>
+        public int OptionSendBufferSize { get; set; } = 8192;
 
         #region Start/Stop server
 
@@ -120,6 +136,18 @@ namespace NetCoreServer
         public bool IsAccepting { get; private set; }
 
         /// <summary>
+        /// Create a new socket object
+        /// </summary>
+        /// <remarks>
+        /// Method may be override if you need to prepare some specific socket object in your implementation.
+        /// </remarks>
+        /// <returns>Socket object</returns>
+        protected virtual Socket CreateSocket()
+        {
+            return new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        }
+
+        /// <summary>
         /// Start the server
         /// </summary>
         /// <returns>'true' if the server was successfully started, 'false' if the server failed to start</returns>
@@ -134,7 +162,7 @@ namespace NetCoreServer
             _acceptorEventArg.Completed += OnAsyncCompleted;
 
             // Create a new acceptor socket
-            _acceptorSocket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            _acceptorSocket = CreateSocket();
 
             // Update the acceptor socket disposed flag
             IsSocketDisposed = false;
@@ -143,6 +171,9 @@ namespace NetCoreServer
             _acceptorSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, OptionReuseAddress);
             // Apply the option: exclusive address use
             _acceptorSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, OptionExclusiveAddressUse);
+            // Apply the option: dual mode (this option must be applied before listening)
+            if (_acceptorSocket.AddressFamily == AddressFamily.InterNetworkV6)
+                _acceptorSocket.DualMode = OptionDualMode;
 
             // Bind the acceptor socket to the IP endpoint
             _acceptorSocket.Bind(Endpoint);
@@ -190,6 +221,9 @@ namespace NetCoreServer
 
             // Dispose the acceptor socket
             _acceptorSocket.Dispose();
+
+            // Dispose event arguments
+            _acceptorEventArg.Dispose();
 
             // Update the acceptor socket disposed flag
             IsSocketDisposed = true;

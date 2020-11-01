@@ -68,11 +68,11 @@ namespace NetCoreServer
         /// <summary>
         /// Get the HTTP request cookies count
         /// </summary>
-        long Cookies { get { return _cookies.Count; } }
+        public long Cookies { get { return _cookies.Count; } }
         /// <summary>
         /// Get the HTTP request cookie by index
         /// </summary>
-        Tuple<string, string> Cookie(int i)
+        public Tuple<string, string> Cookie(int i)
         {
             Debug.Assert((i < _cookies.Count), "Index out of bounds!");
             if (i >= _cookies.Count)
@@ -359,10 +359,13 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="url">URL to request</param>
         /// <param name="content">String content</param>
-        public HttpRequest MakePostRequest(string url, string content)
+        /// <param name="contentType">Content type (default is "text/plain; charset=UTF-8")</param>
+        public HttpRequest MakePostRequest(string url, string content, string contentType = "text/plain; charset=UTF-8")
         {
             Clear();
             SetBegin("POST", url);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
             SetBody(content);
             return this;
         }
@@ -372,10 +375,13 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="url">URL to request</param>
         /// <param name="content">Binary content</param>
-        public HttpRequest MakePostRequest(string url, byte[] content)
+        /// <param name="contentType">Content type (default is "")</param>
+        public HttpRequest MakePostRequest(string url, byte[] content, string contentType = "")
         {
             Clear();
             SetBegin("POST", url);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
             SetBody(content);
             return this;
         }
@@ -385,10 +391,13 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="url">URL to request</param>
         /// <param name="content">Buffer content</param>
-        public HttpRequest MakePostRequest(string url, Buffer content)
+        /// <param name="contentType">Content type (default is "")</param>
+        public HttpRequest MakePostRequest(string url, Buffer content, string contentType = "")
         {
             Clear();
             SetBegin("POST", url);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
             SetBody(content);
             return this;
         }
@@ -398,10 +407,13 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="url">URL to request</param>
         /// <param name="content">String content</param>
-        public HttpRequest MakePutRequest(string url, string content)
+        /// <param name="contentType">Content type (default is "text/plain; charset=UTF-8")</param>
+        public HttpRequest MakePutRequest(string url, string content, string contentType = "text/plain; charset=UTF-8")
         {
             Clear();
             SetBegin("PUT", url);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
             SetBody(content);
             return this;
         }
@@ -411,10 +423,13 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="url">URL to request</param>
         /// <param name="content">Binary content</param>
-        public HttpRequest MakePutRequest(string url, byte[] content)
+        /// <param name="contentType">Content type (default is "")</param>
+        public HttpRequest MakePutRequest(string url, byte[] content, string contentType = "")
         {
             Clear();
             SetBegin("PUT", url);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
             SetBody(content);
             return this;
         }
@@ -424,10 +439,13 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="url">URL to request</param>
         /// <param name="content">Buffer content</param>
-        public HttpRequest MakePutRequest(string url, Buffer content)
+        /// <param name="contentType">Content type (default is "")</param>
+        public HttpRequest MakePutRequest(string url, Buffer content, string contentType = "")
         {
             Clear();
             SetBegin("PUT", url);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
             SetBody(content);
             return this;
         }
@@ -616,8 +634,8 @@ namespace NetCoreServer
                         if (index >= (int)_cache.Size)
                             return false;
 
-                        // Validate header name and value
-                        if ((headerNameSize == 0) || (headerValueSize == 0))
+                        // Validate header name and value (sometimes value can be empty)
+                        if (headerNameSize == 0)
                             return false;
 
                         // Add a new header
@@ -626,7 +644,7 @@ namespace NetCoreServer
                         _headers.Add(new Tuple<string, string>(headerName, headerValue));
 
                         // Try to find the body content length
-                        if (headerName == "Content-Length")
+                        if (string.Compare(headerName, "Content-Length", StringComparison.OrdinalIgnoreCase) == 0)
                         {
                             _bodyLength = 0;
                             for (int j = headerValueIndex; j < (headerValueIndex + headerValueSize); ++j)
@@ -640,7 +658,7 @@ namespace NetCoreServer
                         }
 
                         // Try to find Cookies
-                        if (headerName == "Cookie")
+                        if (string.Compare(headerName, "Cookie", StringComparison.OrdinalIgnoreCase) == 0)
                         {
                             bool name = true;
                             bool token = false;

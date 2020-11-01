@@ -558,7 +558,6 @@ namespace NetCoreServer
         {
             Clear();
             SetBegin(status);
-            SetHeader("Content-Type", "text/html; charset=UTF-8");
             SetBody();
             return this;
         }
@@ -572,7 +571,6 @@ namespace NetCoreServer
         {
             Clear();
             SetBegin(status);
-            SetHeader("Content-Type", "text/html; charset=UTF-8");
             SetBody(error);
             return this;
         }
@@ -584,7 +582,6 @@ namespace NetCoreServer
         {
             Clear();
             SetBegin(200);
-            SetHeader("Content-Type", "text/html; charset=UTF-8");
             SetBody();
             return this;
         }
@@ -592,39 +589,45 @@ namespace NetCoreServer
         /// <summary>
         /// Make GET response
         /// </summary>
-        /// <param name="body">Body string content (default is "")</param>
-        public HttpResponse MakeGetResponse(string body = "")
+        /// <param name="content">String content</param>
+        /// <param name="contentType">Content type (default is "text/plain; charset=UTF-8")</param>
+        public HttpResponse MakeGetResponse(string content = "", string contentType = "text/plain; charset=UTF-8")
         {
             Clear();
             SetBegin(200);
-            SetHeader("Content-Type", "text/html; charset=UTF-8");
-            SetBody(body);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
+            SetBody(content);
             return this;
         }
 
         /// <summary>
         /// Make GET response
         /// </summary>
-        /// <param name="body">Body binary content</param>
-        public HttpResponse MakeGetResponse(byte[] body)
+        /// <param name="content">String content</param>
+        /// <param name="contentType">Content type (default is "")</param>
+        public HttpResponse MakeGetResponse(byte[] content, string contentType = "")
         {
             Clear();
             SetBegin(200);
-            SetHeader("Content-Type", "text/html; charset=UTF-8");
-            SetBody(body);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
+            SetBody(content);
             return this;
         }
 
         /// <summary>
         /// Make GET response
         /// </summary>
-        /// <param name="body">Body buffer content</param>
-        public HttpResponse MakeGetResponse(Buffer body)
+        /// <param name="content">String content</param>
+        /// <param name="contentType">Content type (default is "")</param>
+        public HttpResponse MakeGetResponse(Buffer content, string contentType = "")
         {
             Clear();
             SetBegin(200);
-            SetHeader("Content-Type", "text/html; charset=UTF-8");
-            SetBody(body);
+            if (!string.IsNullOrEmpty(contentType))
+                SetHeader("Content-Type", contentType);
+            SetBody(content);
             return this;
         }
 
@@ -832,8 +835,8 @@ namespace NetCoreServer
                         if (index >= (int)_cache.Size)
                             return false;
 
-                        // Validate header name and value
-                        if ((headerNameSize == 0) || (headerValueSize == 0))
+                        // Validate header name and value (sometimes value can be empty)
+                        if (headerNameSize == 0)
                             return false;
 
                         // Add a new header
@@ -842,7 +845,7 @@ namespace NetCoreServer
                         _headers.Add(new Tuple<string, string>(headerName, headerValue));
 
                         // Try to find the body content length
-                        if (headerName == "Content-Length")
+                        if (string.Compare(headerName, "Content-Length", StringComparison.OrdinalIgnoreCase) == 0)
                         {
                             _bodyLength = 0;
                             for (int j = headerValueIndex; j < (headerValueIndex + headerValueSize); ++j)
