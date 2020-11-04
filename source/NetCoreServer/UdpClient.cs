@@ -507,7 +507,7 @@ namespace NetCoreServer
                 BytesReceived += received;
 
                 // Call the datagram received handler
-                OnReceived(endpoint, buffer, offset, size);
+                OnReceived(endpoint, buffer.AsSpan((int)offset, (int)size));
 
                 return received;
             }
@@ -651,7 +651,7 @@ namespace NetCoreServer
             BytesReceived += size;
 
             // Call the datagram received handler
-            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data, 0, size);
+            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data);
 
             // If the receive buffer is full increase its size
             if (_receiveBuffer.Capacity == size)
@@ -727,7 +727,7 @@ namespace NetCoreServer
         /// <remarks>
         /// Notification is called when another datagram was received from some endpoint
         /// </remarks>
-        protected virtual void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size) {}
+        protected virtual void OnReceived(EndPoint endpoint, ReadOnlySpan<byte> data) {}
         /// <summary>
         /// Handle datagram sent notification
         /// </summary>
