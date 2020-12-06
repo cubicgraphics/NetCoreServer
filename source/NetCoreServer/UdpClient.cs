@@ -651,7 +651,7 @@ namespace NetCoreServer
             BytesReceived += size;
 
             // Call the datagram received handler
-            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data);
+            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data.AsSpan(0, (int)size));
 
             // If the receive buffer is full increase its size
             if (_receiveBuffer.Capacity == size)
