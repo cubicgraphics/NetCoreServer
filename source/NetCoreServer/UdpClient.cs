@@ -405,17 +405,8 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="buffer">Datagram buffer to send</param>
         /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(byte[] buffer) { return SendAsync(buffer, 0, buffer.Length); }
-
-        /// <summary>
-        /// Send datagram to the connected server (asynchronous)
-        /// </summary>
-        /// <param name="buffer">Datagram buffer to send</param>
-        /// <param name="offset">Datagram buffer offset</param>
-        /// <param name="size">Datagram buffer size</param>
-        /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(byte[] buffer, long offset, long size) { return SendAsync(Endpoint, buffer, offset, size); }
-
+        public virtual bool SendAsync(ReadOnlySpan<byte> buffer) { return SendAsync(Endpoint, buffer); }
+        
         /// <summary>
         /// Send text to the connected server (asynchronous)
         /// </summary>
@@ -428,18 +419,10 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="endpoint">Endpoint to send</param>
         /// <param name="buffer">Datagram buffer to send</param>
-        /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(EndPoint endpoint, byte[] buffer) { return SendAsync(endpoint, buffer, 0, buffer.Length); }
-
-        /// <summary>
-        /// Send datagram to the given endpoint (asynchronous)
-        /// </summary>
-        /// <param name="endpoint">Endpoint to send</param>
-        /// <param name="buffer">Datagram buffer to send</param>
         /// <param name="offset">Datagram buffer offset</param>
         /// <param name="size">Datagram buffer size</param>
         /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(EndPoint endpoint, byte[] buffer, long offset, long size)
+        public virtual bool SendAsync(EndPoint endpoint, ReadOnlySpan<byte> buffer)
         {
             if (_sending)
                 return false;
@@ -447,11 +430,11 @@ namespace NetCoreServer
             if (!IsConnected)
                 return false;
 
-            if (size == 0)
+            if (buffer.Length == 0)
                 return true;
 
             // Fill the main send buffer
-            _sendBuffer.Append(buffer, offset, size);
+            _sendBuffer.Append(buffer);
 
             // Update statistic
             BytesSending = _sendBuffer.Size;
