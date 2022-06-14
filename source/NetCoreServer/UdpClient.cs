@@ -470,16 +470,7 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="buffer">Datagram buffer to send</param>
         /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(byte[] buffer) { return SendAsync(buffer, 0, buffer.Length); }
-
-        /// <summary>
-        /// Send datagram to the connected server (asynchronous)
-        /// </summary>
-        /// <param name="buffer">Datagram buffer to send</param>
-        /// <param name="offset">Datagram buffer offset</param>
-        /// <param name="size">Datagram buffer size</param>
-        /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(byte[] buffer, long offset, long size) { return SendAsync(Endpoint, buffer, offset, size); }
+        public virtual bool SendAsync(ReadOnlySpan<byte> buffer) { return SendAsync(Endpoint, buffer); }
 
         /// <summary>
         /// Send text to the connected server (asynchronous)
@@ -493,18 +484,10 @@ namespace NetCoreServer
         /// </summary>
         /// <param name="endpoint">Endpoint to send</param>
         /// <param name="buffer">Datagram buffer to send</param>
-        /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(EndPoint endpoint, byte[] buffer) { return SendAsync(endpoint, buffer, 0, buffer.Length); }
-
-        /// <summary>
-        /// Send datagram to the given endpoint (asynchronous)
-        /// </summary>
-        /// <param name="endpoint">Endpoint to send</param>
-        /// <param name="buffer">Datagram buffer to send</param>
         /// <param name="offset">Datagram buffer offset</param>
         /// <param name="size">Datagram buffer size</param>
         /// <returns>'true' if the datagram was successfully sent, 'false' if the datagram was not sent</returns>
-        public virtual bool SendAsync(EndPoint endpoint, byte[] buffer, long offset, long size)
+        public virtual bool SendAsync(EndPoint endpoint, ReadOnlySpan<byte> buffer)
         {
             if (_sending)
                 return false;
@@ -512,7 +495,7 @@ namespace NetCoreServer
             if (!IsConnected)
                 return false;
 
-            if (size == 0)
+            if (buffer.Length == 0)
                 return true;
 
             // Check the send buffer limit
@@ -523,7 +506,7 @@ namespace NetCoreServer
             }
 
             // Fill the main send buffer
-            _sendBuffer.Append(buffer, offset, size);
+            _sendBuffer.Append(buffer);
 
             // Update statistic
             BytesSending = _sendBuffer.Size;
@@ -579,7 +562,7 @@ namespace NetCoreServer
                 BytesReceived += received;
 
                 // Call the datagram received handler
-                OnReceived(endpoint, buffer, offset, size);
+                OnReceived(endpoint, buffer.AsSpan((int)offset, (int)size));
 
                 return received;
             }
@@ -726,7 +709,7 @@ namespace NetCoreServer
             BytesReceived += size;
 
             // Call the datagram received handler
-            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data, 0, size);
+            OnReceived(e.RemoteEndPoint, _receiveBuffer.Data.AsSpan(0, (int)size));
 
             // If the receive buffer is full increase its size
             if (_receiveBuffer.Capacity == size)
@@ -820,7 +803,7 @@ namespace NetCoreServer
         /// <remarks>
         /// Notification is called when another datagram was received from some endpoint
         /// </remarks>
-        protected virtual void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size) {}
+        protected virtual void OnReceived(EndPoint endpoint, ReadOnlySpan<byte> data) {}
         /// <summary>
         /// Handle datagram sent notification
         /// </summary>
