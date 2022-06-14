@@ -18,7 +18,7 @@ namespace tests
 
         protected override void OnConnected() { Connected = true; ReceiveAsync(); }
         protected override void OnDisconnected() { Disconnected = true; }
-        protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size) { ReceiveAsync(); }
+        protected override void OnReceived(EndPoint endpoint, ReadOnlySpan<byte> data) { ReceiveAsync(); }
         protected override void OnError(SocketError error) { Errors = true; }
     }
 
@@ -32,7 +32,7 @@ namespace tests
 
         protected override void OnStarted() { Started = true; ReceiveAsync(); }
         protected override void OnStopped() { Stopped = true; }
-        protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size) { SendAsync(endpoint, buffer, offset, size); }
+        protected override void OnReceived(EndPoint endpoint, ReadOnlySpan<byte> data) { SendAsync(endpoint, buffer); }
         protected override void OnSent(EndPoint endpoint, long sent) { ThreadPool.QueueUserWorkItem(o => { ReceiveAsync(); } ); }
         protected override void OnError(SocketError error) { Errors = true; }
     }

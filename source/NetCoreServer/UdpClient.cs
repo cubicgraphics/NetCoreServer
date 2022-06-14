@@ -499,7 +499,7 @@ namespace NetCoreServer
                 return true;
 
             // Check the send buffer limit
-            if (((_sendBuffer.Size + size) > OptionSendBufferLimit) && (OptionSendBufferLimit > 0))
+            if (((_sendBuffer.Size + buffer.Length) > OptionSendBufferLimit) && (OptionSendBufferLimit > 0))
             {
                 SendError(SocketError.NoBufferSpaceAvailable);
                 return false;

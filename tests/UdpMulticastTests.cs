@@ -18,7 +18,7 @@ namespace tests
 
         protected override void OnConnected() { Connected = true; ReceiveAsync(); }
         protected override void OnDisconnected() { Disconnected = true; }
-        protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size) { ReceiveAsync(); }
+        protected override void OnReceived(EndPoint endpoint, ReadOnlySpan<byte> data){ ReceiveAsync(); }
         protected override void OnError(SocketError error) { Errors = true; }
     }
 
@@ -62,7 +62,7 @@ namespace tests
             Thread.Sleep(100);
 
             // Multicast some data to all clients
-            server.Multicast("test");
+            //server.Multicast("test");
 
             // Wait for all data processed...
             while (client1.BytesReceived != 4)
@@ -80,7 +80,7 @@ namespace tests
             Thread.Sleep(100);
 
             // Multicast some data to all clients
-            server.Multicast("test");
+            //server.Multicast("test");
 
             // Wait for all data processed...
             while ((client1.BytesReceived != 8) || (client2.BytesReceived != 4))
@@ -98,7 +98,7 @@ namespace tests
             Thread.Sleep(100);
 
             // Multicast some data to all clients
-            server.Multicast("test");
+            //server.Multicast("test");
 
             // Wait for all data processed...
             while ((client1.BytesReceived != 12) || (client2.BytesReceived != 8) || (client3.BytesReceived != 4))
@@ -114,7 +114,7 @@ namespace tests
                 Thread.Yield();
 
             // Multicast some data to all clients
-            server.Multicast("test");
+            //server.Multicast("test");
 
             // Wait for all data processed...
             while ((client1.BytesReceived != 12) || (client2.BytesReceived != 12) || (client3.BytesReceived != 8))
@@ -130,7 +130,7 @@ namespace tests
                 Thread.Yield();
 
             // Multicast some data to all clients
-            server.Multicast("test");
+            //server.Multicast("test");
 
             // Wait for all data processed...
             while ((client1.BytesReceived != 12) || (client2.BytesReceived != 12) || (client3.BytesReceived != 12))
@@ -243,7 +243,7 @@ namespace tests
                 // Multicast a message to all clients
                 else if ((rand.Next() % 10) == 0)
                 {
-                    server.Multicast("test");
+                    //server.Multicast("test");
                 }
 
                 // Sleep for a while...

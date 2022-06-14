@@ -363,7 +363,7 @@ namespace NetCoreServer
                 return true;
 
             // Check the send buffer limit
-            if (((_sendBuffer.Size + size) > OptionSendBufferLimit) && (OptionSendBufferLimit > 0))
+            if (((_sendBuffer.Size + buffer.Length) > OptionSendBufferLimit) && (OptionSendBufferLimit > 0))
             {
                 SendError(SocketError.NoBufferSpaceAvailable);
                 return false;
@@ -586,7 +586,7 @@ namespace NetCoreServer
                     SendError(SocketError.NoBufferSpaceAvailable);
 
                     // Call the datagram received zero handler
-                    OnReceived(e.RemoteEndPoint, _receiveBuffer.Data, 0, 0);
+                    OnReceived(e.RemoteEndPoint, ReadOnlySpan<byte>.Empty);
 
                     return;
                 }
