@@ -40,7 +40,7 @@ namespace NetCoreServer
         /// <summary>
         /// Number of bytes pending sent by the session
         /// </summary>
-        public long BytesPending { get; private set; }
+        public long BytesPending { get; protected set; }
         /// <summary>
         /// Number of bytes sending by the session
         /// </summary>
@@ -219,10 +219,10 @@ namespace NetCoreServer
         private Buffer _receiveBuffer;
         private SocketAsyncEventArgs _receiveEventArg;
         // Send buffer
-        private readonly object _sendLock = new object();
+        protected readonly object _sendLock = new object();
         private bool _sending;
-        private Buffer _sendBufferMain;
-        private Buffer _sendBufferFlush;
+        protected Buffer _sendBufferMain;
+        protected Buffer _sendBufferFlush;
         private SocketAsyncEventArgs _sendEventArg;
         private long _sendBufferFlushOffset;
 
@@ -431,7 +431,7 @@ namespace NetCoreServer
         /// <summary>
         /// Try to send pending data
         /// </summary>
-        private void TrySend()
+        protected void TrySend()
         {
             if (!IsConnected)
                 return;
